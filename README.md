@@ -4,11 +4,12 @@ This repo includes a series of physics-informed neural networks for various dyna
  - A: Available
  - D: In development
  - P: Proposed
+ - NP: Not planned or not feasible
 
 
-| Model             | Free vibration    | Forced Vibration  |
-| :----             | :------------:    | :--------------:  |
-| Linear SDOF       | A                 | D                 |
-| Duffing SDOF      | A                 | D                 |
-| Continuous Beam   | D                 | P                 |
-| Elastic waves     | N/A               | D                 |
+| Model             | Free vibration    | Forced Vibration  | Forward Prediction|
+| :----             | :------------:    | :--------------:  | :-------------:   |
+| Linear SDOF       | A                 | D                 | D                 |
+| Duffing SDOF      | A                 | D                 | D                 |
+| Continuous Beam   | D                 | P                 | D                 |
+| Elastic waves     | NP                | D                 | NP                |
