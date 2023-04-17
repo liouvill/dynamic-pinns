@@ -103,7 +103,6 @@ class cont_beam:
                                     (torch.sin(beta_n[n]*x) - torch.sinh(beta_n[n]*x))
             
     def free_vibration(self, time, w0, wd0, zeta=0.0):
-
         nt = time.shape[0]
         x = self.xx
         nx = x.shape[0]
