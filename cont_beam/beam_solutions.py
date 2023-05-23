@@ -65,7 +65,7 @@ class cont_beam:
                 self.wn = (beta_l**2) * wn_mult
                 self.phi_n = torch.zeros((self.nx, n_modes))
                 for n in range(n_modes):
-                    self.phi_n[:,n] = torch.sin(beta_l[n]*x/self.L)
+                    self.phi_n[:,n] = -torch.sin(beta_l[n]*x/self.L)
             case "fx-fx":
                 self.bc_type_long = "fixed - fixed"
                 beta_l = (2*nn + 1) * pi / 2
@@ -101,28 +101,30 @@ class cont_beam:
                     self.phi_n[:,n] =  (torch.cos(beta_n[n]*x) - torch.cosh(beta_n[n]*x)) - \
                                     (torch.cos(beta_l[n]) + torch.cosh(beta_l[n]))/(torch.sin(beta_l[n]) + torch.sinh(beta_l[n])) * \
                                     (torch.sin(beta_n[n]*x) - torch.sinh(beta_n[n]*x))
-            
-    def free_vibration(self, time, w0, wd0, zeta=0.0):
+                    
+
+    def free_vibration(self, time, w0, wd0):
         nt = time.shape[0]
         x = self.xx
         nx = x.shape[0]
 
-        match self.bc_type:
-            case "ss-ss":
-                ww = torch.zeros((nx, nt, self.n_modes))
-                for n in range(self.n_modes):
-                    integrand = torch.sin((n+1)*pi*x/self.L)
-                    An = (2/self.L) * integrate.simpson(w0 * integrand, x)
-                    Bn = (2/(self.wn[n]*self.L)) * integrate.simpson(wd0 * integrand, x)
-                    for t in range(nt):
-                        ww[:, t, n] = self.phi_n[:,n] * (An*torch.cos(self.wn[n]*time[t]) + Bn*torch.sin(self.wn[n]*time[t]))
-                self.wxt = torch.sum(ww, dim=2)
-            case "fx-fx":
-                ww = torch.zeros((nx, nt, self.n_modes))
-                # for n in range(self.n_modes):
-                #     integrand = 
-        
-        return torch.sum(ww, dim=2), ww
+        ww = torch.zeros((nx, nt, self.n_modes))
+        wwd = torch.zeros((nx, nt, self.n_modes))
+        wwdd = torch.zeros((nx, nt, self.n_modes))
+        for n in range(self.n_modes):
+            eta_integrand = self.pA * self.phi_n[:,n] * w0
+            eta = integrate.simpson(eta_integrand, x)
+            eta_dot_integrand = self.pA * self.phi_n[:,n] * wd0
+            eta_dot = integrate.simpson(eta_dot_integrand, x)
+            for t in range(nt):
+                ww[:,t,n] = self.phi_n[:,n] * (eta*torch.cos(self.wn[n]*time[t]) + (eta_dot/self.wn[n])*torch.sin(self.wn[n]*time[t]))
+                wwd[:,t,n] = self.phi_n[:,n] * (-self.wn[n]*eta*torch.sin(self.wn[n]*time[t]) + eta_dot*torch.cos(self.wn[n]*time[t]))
+                wwdd[:,t,n] = self.phi_n[:,n] * (-(self.wn[n]**2)*eta*torch.cos(self.wn[n]*time[t]) - self.wn[n]*eta_dot*torch.sin(self.wn[n]*time[t]))
+        self.wxt = torch.sum(ww, dim=2)
+        self.wxtd = torch.sum(wwd, dim=2)
+        self.wxtdd = torch.sum(wwdd, dim=2)
+
+        return self.wxt, self.wxtd, self.wxtdd, ww
     
     def forced_vibration(self, time, forcing):
         nt = time.shape[0]
